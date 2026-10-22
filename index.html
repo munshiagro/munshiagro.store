@@ -359,6 +359,18 @@
   .shop-add-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:39px;margin-top:3px;border:1px solid #d6e5d6;border-radius:11px;background:#edf6ed;color:#1c5538;font:800 11px/1.25 system-ui,sans-serif;cursor:pointer;transition:all .16s}
   .shop-add-btn svg{width:16px;height:16px}.shop-add-btn:hover{border-color:#173f32;background:#173f32;color:#fff}.shop-add-btn:disabled{cursor:not-allowed;opacity:.6}
   .shop-empty{grid-column:1/-1;padding:35px 18px;border:1px dashed #cbdccb;border-radius:16px;background:#fff;text-align:center;color:#68806f;font-size:13px}
+  .shop-details-trigger{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;margin:-1px 0 0;padding:2px 0;border:0;background:transparent;color:#39734c;font:750 11px/1.35 system-ui,sans-serif;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+  .shop-details-trigger:hover{color:#173f32}
+  .shop-details-trigger svg{width:12px;height:12px;flex:none}
+  .shop-details-overlay{position:fixed;inset:0;z-index:1400;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(13,35,23,.56);backdrop-filter:blur(5px)}
+  .shop-details-overlay[hidden]{display:none!important}
+  .shop-details-dialog{position:relative;z-index:1;width:min(480px,100%);max-height:min(78dvh,560px);overflow:auto;border:1px solid #dce8da;border-radius:18px;background:#fff;box-shadow:0 22px 70px rgba(0,0,0,.25);animation:shopDetailsIn .18s ease-out}
+  @keyframes shopDetailsIn{from{transform:translateY(8px) scale(.99);opacity:.6}to{transform:translateY(0) scale(1);opacity:1}}
+  .shop-details-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:17px 18px 13px;border-bottom:1px solid #e7eee5;background:#f8fbf6}
+  .shop-details-head h2{margin:0;color:#244a34;font-size:18px;font-weight:850;line-height:1.5}
+  .shop-details-close{display:grid;place-items:center;width:32px;height:32px;flex:none;border:1px solid #dbe6d9;border-radius:50%;background:#fff;color:#31553c;font-size:20px;line-height:1;cursor:pointer}
+  .shop-details-body{padding:18px;color:#52675a;font-size:14px;line-height:1.9;white-space:pre-line;overflow-wrap:anywhere}
+  .shop-details-missing{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border:1px dashed #d9e5d6;border-radius:10px;background:#f8fbf6;color:#6b7e6e;font-size:12px;line-height:1.6}
   .shop-footer-note{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px;color:#738579;font-size:10.5px;line-height:1.6}
   .shop-footer-note a{color:#2d6a4f;font-weight:800;text-decoration:none}
   .shop-toast{position:fixed;z-index:1000;left:50%;bottom:22px;transform:translate(-50%,20px);opacity:0;pointer-events:none;max-width:calc(100% - 28px);padding:12px 16px;border:1px solid #d5e6d5;border-radius:12px;background:#173f32;color:#fff;font-size:12px;font-weight:750;box-shadow:0 12px 32px rgba(0,0,0,.2);transition:opacity .18s,transform .18s}
@@ -451,6 +463,7 @@
     .shop-card-body{padding:8px 7px 9px!important;gap:6px!important}
     .shop-card-category{display:none!important}
     .shop-card h3{font-size:12px!important;line-height:1.48!important;min-height:54px!important;overflow-wrap:anywhere}
+    .shop-details-trigger{font-size:10px!important;line-height:1.35!important;margin-top:-2px}
     .shop-card-desc{display:none!important}
     .shop-product-price-row{align-items:flex-start;flex-direction:column;gap:2px;padding-top:4px!important}
     .shop-price{font-size:15px!important;white-space:normal!important}
@@ -965,6 +978,15 @@
     </div>
   </aside>
 </div>
+<div class="shop-details-overlay" id="shopDetailsOverlay" hidden>
+  <section class="shop-details-dialog" role="dialog" aria-modal="true" aria-labelledby="shopDetailsTitle" aria-describedby="shopDetailsBody">
+    <header class="shop-details-head">
+      <h2 id="shopDetailsTitle">পণ্যের বিস্তারিত</h2>
+      <button type="button" class="shop-details-close" id="shopDetailsClose" aria-label="বিস্তারিত বন্ধ করুন">×</button>
+    </header>
+    <div class="shop-details-body" id="shopDetailsBody"></div>
+  </section>
+</div>
 <div class="shop-toast" id="shopToast" role="status" aria-live="polite"></div>
 
 <footer class="site-footer" id="contact-footer">
@@ -1236,6 +1258,16 @@
   function optionFor(p, index){ const opts = optionsFor(p); return opts[Math.min(opts.length-1,Math.max(0,Number(index)||0))] || opts[0]; }
   function persistCart(){ try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch(e) {} }
   function showToast(message){ const node=el('shopToast'); if(!node)return; node.textContent=message; node.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>node.classList.remove('show'),2400); }
+  function showProductDetails(productId){
+    const p=products.find(item=>item.id===productId);if(!p)return;
+    const title=el('shopDetailsTitle'),body=el('shopDetailsBody'),overlay=el('shopDetailsOverlay');
+    title.textContent=String(p.name||'পণ্যের বিস্তারিত');
+    const description=typeof p.description==='string'?p.description.trim():'';
+    if(description){body.textContent=description;body.classList.remove('shop-details-missing');}
+    else{body.textContent='';body.classList.add('shop-details-missing');body.textContent='এই পণ্যের বিস্তারিত নেই।';}
+    overlay.hidden=false;document.body.style.overflow='hidden';el('shopDetailsClose').focus();
+  }
+  function closeProductDetails(){const overlay=el('shopDetailsOverlay');if(!overlay)return;overlay.hidden=true;if(el('shopCartOverlay').hidden)document.body.style.overflow='';}
   function renderFilters(){
     const filters = el('shopFilters'); if(!filters)return;
     const categories = [...new Set([...CATEGORY_ORDER, ...products.map(p=>p.category).filter(Boolean)])];
@@ -1257,7 +1289,7 @@
       const quoteHref=`https://wa.me/8801581477854?text=${quoteText}`;
       const priceBlock=quoteOnly?`<strong class="shop-price shop-price-contact">দাম জানতে যোগাযোগ করুন</strong>`:`<strong class="shop-price" data-shop-price="${escapeHtml(p.id)}">${formatMoney(price)}</strong><span class="shop-unit" data-shop-unit="${escapeHtml(p.id)}">/ ${escapeHtml(optionFor(p,0).unit||p.unit||'একক')}</span>`;
       const actionBlock=quoteOnly?`<a class="shop-add-btn shop-quote-btn" href="${quoteHref}" target="_blank" rel="noopener">দাম ও প্রাপ্যতা জানতে ↗</a>`:`<button type="button" class="shop-add-btn" data-shop-add="${escapeHtml(p.id)}" ${disabled?'disabled':''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M2 3h2l2.6 12.2a2 2 0 0 0 2 1.6h9.6a2 2 0 0 0 1.9-1.4L22 8H5M12 5v7M8.5 8.5h7"/></svg>${disabled?'অর্ডার বন্ধ':'কার্টে যোগ করুন'}</button>`;
-      return `<article class="shop-card" data-product-card="${escapeHtml(p.id)}"><div class="shop-art" style="--art-bg:${(CATEGORY_PALETTE[p.category]||CATEGORY_PALETTE[CATEGORY_ORDER[0]])[0]}">${productArt(p,idx)}${disabled?'<span class="shop-unavailable">সাময়িকভাবে অপ্রাপ্য</span>':''}</div><div class="shop-card-body"><h3>${escapeHtml(p.name)}</h3><p class="shop-card-desc">${escapeHtml(p.description||'খামারের উৎপাদিত পণ্য।')}</p>${opts.length>1&&!quoteOnly?`<div class="shop-option-picker"><label class="shop-option-label" for="shopOption-${escapeHtml(p.id)}">পরিমাণ বেছে নিন</label><select id="shopOption-${escapeHtml(p.id)}" class="shop-option-select" data-shop-option="${escapeHtml(p.id)}" aria-label="${escapeHtml(p.name)}-এর প্যাক নির্বাচন">${opts.map((o,i)=>`<option value="${i}">${escapeHtml(o.label||o.unit||'একক')} — ${formatMoney(o.price)}</option>`).join('')}</select></div>`:''}<div class="shop-product-price-row">${priceBlock}</div>${actionBlock}</div></article>`;
+      return `<article class="shop-card" data-product-card="${escapeHtml(p.id)}"><div class="shop-art" style="--art-bg:${(CATEGORY_PALETTE[p.category]||CATEGORY_PALETTE[CATEGORY_ORDER[0]])[0]}">${productArt(p,idx)}${disabled?'<span class="shop-unavailable">সাময়িকভাবে অপ্রাপ্য</span>':''}</div><div class="shop-card-body"><h3>${escapeHtml(p.name)}</h3><button type="button" class="shop-details-trigger" data-shop-details="${escapeHtml(p.id)}" aria-haspopup="dialog" aria-controls="shopDetailsOverlay">বিস্তারিত <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 7h.01"></path></svg></button>${opts.length>1&&!quoteOnly?`<div class="shop-option-picker"><label class="shop-option-label" for="shopOption-${escapeHtml(p.id)}">পরিমাণ বেছে নিন</label><select id="shopOption-${escapeHtml(p.id)}" class="shop-option-select" data-shop-option="${escapeHtml(p.id)}" aria-label="${escapeHtml(p.name)}-এর প্যাক নির্বাচন">${opts.map((o,i)=>`<option value="${i}">${escapeHtml(o.label||o.unit||'একক')} — ${formatMoney(o.price)}</option>`).join('')}</select></div>`:''}<div class="shop-product-price-row">${priceBlock}</div>${actionBlock}</div></article>`;
     }).join('');
   }
   function getCartProducts(){return cart.map(row=>{const p=products.find(x=>x.id===row.id);if(!p)return null;const option=optionFor(p,row.optionIndex);return {...row,product:p,option,lineTotal:(Number(option.price)||0)*row.qty};}).filter(Boolean);}
@@ -1275,9 +1307,14 @@
   el('shopFilters').addEventListener('click',ev=>{const b=ev.target.closest('[data-shop-filter]');if(!b)return;selectedCategory=b.dataset.shopFilter;renderFilters();renderProducts();});
   el('shopSearch').addEventListener('input',ev=>{query=ev.target.value||'';renderProducts();});
   el('shopProductGrid').addEventListener('change',ev=>{const select=ev.target.closest('[data-shop-option]');if(!select)return;const p=products.find(x=>x.id===select.dataset.shopOption);if(!p)return;const opt=optionFor(p,select.value);const price=el('shopProductGrid').querySelector(`[data-shop-price="${CSS.escape(p.id)}"]`);const unit=el('shopProductGrid').querySelector(`[data-shop-unit="${CSS.escape(p.id)}"]`);if(price)price.textContent=formatMoney(opt.price);if(unit)unit.textContent='/ '+(opt.unit||p.unit||'একক');});
-  el('shopProductGrid').addEventListener('click',ev=>{const b=ev.target.closest('[data-shop-add]');if(!b)return;const p=products.find(x=>x.id===b.dataset.shopAdd);if(!p||p.active===false)return;const select=el('shopProductGrid').querySelector(`[data-shop-option="${CSS.escape(p.id)}"]`);const optionIndex=select?Number(select.value)||0:0;const row=cart.find(x=>x.id===p.id&&x.optionIndex===optionIndex);if(row)row.qty=Math.min(999,row.qty+1);else cart.push({id:p.id,optionIndex,qty:1});saveAndRenderCart();showToast(`${p.name} কার্টে যোগ হয়েছে।`);});
+  el('shopProductGrid').addEventListener('click',ev=>{
+    const details=ev.target.closest('[data-shop-details]');if(details){showProductDetails(details.dataset.shopDetails);return;}
+    const b=ev.target.closest('[data-shop-add]');if(!b)return;const p=products.find(x=>x.id===b.dataset.shopAdd);if(!p||p.active===false)return;const select=el('shopProductGrid').querySelector(`[data-shop-option="${CSS.escape(p.id)}"]`);const optionIndex=select?Number(select.value)||0:0;const row=cart.find(x=>x.id===p.id&&x.optionIndex===optionIndex);if(row)row.qty=Math.min(999,row.qty+1);else cart.push({id:p.id,optionIndex,qty:1});saveAndRenderCart();showToast(`${p.name} কার্টে যোগ হয়েছে।`);
+  });
+  el('shopDetailsClose').addEventListener('click',closeProductDetails);
+  el('shopDetailsOverlay').addEventListener('click',ev=>{if(ev.target===el('shopDetailsOverlay'))closeProductDetails();});
   el('shopOpenCart').addEventListener('click',openCart);el('shopCloseCart').addEventListener('click',closeCart);el('shopCartOverlay').addEventListener('click',ev=>{if(ev.target===el('shopCartOverlay'))closeCart();});
-  document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!el('shopCartOverlay').hidden)closeCart();});
+  document.addEventListener('keydown',ev=>{if(ev.key!=='Escape')return;if(!el('shopDetailsOverlay').hidden)closeProductDetails();else if(!el('shopCartOverlay').hidden)closeCart();});
   el('shopCartList').addEventListener('click',ev=>{const b=ev.target.closest('[data-cart-inc],[data-cart-dec],[data-cart-remove]');if(!b)return;const id=b.dataset.cartInc||b.dataset.cartDec||b.dataset.cartRemove;const oi=Number(b.dataset.optionIndex)||0;const row=cart.find(x=>x.id===id&&x.optionIndex===oi);if(!row)return;if(b.hasAttribute('data-cart-remove'))cart=cart.filter(x=>!(x.id===id&&x.optionIndex===oi));else if(b.hasAttribute('data-cart-inc'))row.qty=Math.min(999,row.qty+1);else if(row.qty>1)row.qty--;else cart=cart.filter(x=>!(x.id===id&&x.optionIndex===oi));saveAndRenderCart();});
   const pendingOrderRequests = new Map();
   function submitOrderToDashboard(order){
