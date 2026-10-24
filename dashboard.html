@@ -815,38 +815,6 @@
   </div>
 </header>
 
-<div class="container public-dashboard" id="publicDashboardView">
-  <div class="public-dashboard-head">
-    <div><h2>খামারের অবস্থা এক নজরে</h2><p>পরিকল্পনা, কৃষি কার্যক্রম ও সামগ্রিক প্রবণতা দেখুন। পরিচালনার কাজের জন্য উপরের ভূমিকা অনুযায়ী লগইন করুন।</p></div>
-    <span class="public-live" id="publicSyncState">তথ্য লোড হচ্ছে</span>
-  </div>
-  <div class="public-kpis" aria-label="খামারের সংক্ষিপ্ত তথ্য">
-    <div class="public-kpi"><span class="label">জমির মাপ</span><span class="value">২৪০ × ১২০ ফুট</span><small>প্রায় ৬৬ শতাংশ</small></div>
-    <div class="public-kpi"><span class="label">পরিকল্পনার মেয়াদ</span><span class="value">১০ বছর</span><small>ধাপে ধাপে সম্প্রসারণ</small></div>
-    <div class="public-kpi"><span class="label">ফার্ম ম্যাপ জোন</span><span class="value">৭টি</span><small>৪০ ফুট ফাঁকা অংশসহ</small></div>
-    <div class="public-kpi"><span class="label">অনুমোদিত ইনভেস্টর</span><span class="value" id="publicInvestorCount">০</span><small>সমষ্টিগত সংখ্যা</small></div>
-  </div>
-  <div class="public-dashboard-grid">
-    <section class="public-card">
-      <h3>আয়–ব্যয়ের প্রবণতা</h3>
-      <p class="sub">সাম্প্রতিক বছরের আপেক্ষিক সূচক (০–১০০); এখানে প্রকৃত টাকার অঙ্ক প্রকাশ করা হয় না।</p>
-      <div id="publicTrendChart"><div class="public-empty">ডেটা লোড হচ্ছে…</div></div>
-      <div class="public-bar-legend"><span><i style="background:var(--mid)"></i>আয়ের সূচক</span><span><i style="background:var(--brown)"></i>ব্যয়ের সূচক</span></div>
-    </section>
-    <section class="public-card">
-      <h3>আয়ের প্রধান খাত</h3>
-      <p class="sub">মোট আয়ের তুলনায় খাতভিত্তিক অংশ; টাকার পরিমাণ নয়।</p>
-      <div id="publicCategoryShares"><div class="public-empty">ডেটা লোড হচ্ছে…</div></div>
-    </section>
-    <section class="public-card wide">
-      <h3>সাম্প্রতিক কার্যক্রম</h3>
-      <p class="sub">সাম্প্রতিক রেকর্ডের ধরন ও খাত দেখানো হচ্ছে; ব্যক্তিগত নোট ও অর্থের অঙ্ক প্রকাশ করা হয় না।</p>
-      <div id="publicRecentActivity"><div class="public-empty">ডেটা লোড হচ্ছে…</div></div>
-    </section>
-  </div>
-  <p class="public-privacy-note">পাবলিক ভিউতে কেবল সারসংক্ষেপ ও আপেক্ষিক প্রবণতা দেখানো হয়। বিস্তারিত আয়–ব্যয়, এন্ট্রি, বেতন, স্টাফের ব্যক্তিগত তথ্য ও ইনভেস্টমেন্টের তথ্য অনুমোদিত লগইন অনুযায়ী দেখা যাবে।</p>
-</div>
-
 <div class="container" id="publicView">
   <div class="nav-grid">
     <button type="button" class="nav-card" id="btnProjectInfo"><span class="nav-icon">📄</span><span class="nav-label">Project সম্পর্কে</span></button>
@@ -2956,29 +2924,25 @@ function applyAdminUI(){
 }
 
 function applyViewMode(){
-  const publicDashboardView = document.getElementById("publicDashboardView");
   const publicView = document.getElementById("publicView");
   const dashboardView = document.getElementById("dashboardView");
   const investorView = document.getElementById("investorView");
   const investorBtn = document.getElementById("investorBtn");
 
   if (isAdmin || isStaff) {
-    if (publicDashboardView) publicDashboardView.style.display = "none";
     publicView.style.display = "none";
     dashboardView.style.display = "block";
     investorView.style.display = "none";
   } else if (investorSession) {
-    if (publicDashboardView) publicDashboardView.style.display = "none";
     publicView.style.display = "none";
     dashboardView.style.display = "none";
     investorView.style.display = "block";
     renderInvestorOwnView();
   } else {
-    if (publicDashboardView) publicDashboardView.style.display = "block";
-    publicView.style.display = "none";
+    // Public visitors see the existing Project/Invest/Video navigation only.
+    publicView.style.display = "block";
     dashboardView.style.display = "none";
     investorView.style.display = "none";
-    renderPublicDashboard();
   }
   investorBtn.textContent = investorSession ? "🔓 ইনভেস্টর লগআউট" : "💼 ইনভেস্টর লগইন";
   investorBtn.style.display = (isAdmin || isStaff) ? "none" : "inline-flex";
