@@ -829,6 +829,18 @@ html.embedded-dashboard .container#publicView {
 </style>
 <script>if(new URLSearchParams(location.search).get('embed')==='1')document.documentElement.classList.add('embedded-dashboard');</script>
 
+
+<style id="adminProjectNotesStyles">
+  .admin-project-notes{margin:0 0 18px;padding:16px 18px;border:1px solid #e7d49b;border-left:5px solid #c49a36;border-radius:14px;background:linear-gradient(135deg,#fffaf0 0%,#fffdf7 100%);color:#59451c;box-shadow:0 5px 18px rgba(83,62,15,.06)}
+  .admin-project-notes-title{display:flex;align-items:flex-start;gap:11px;margin-bottom:10px}
+  .admin-project-notes-title>span{font-size:23px;line-height:1.1}
+  .admin-project-notes-title strong{display:block;font-size:16px;color:#5a4211}
+  .admin-project-notes-title small{display:block;margin-top:3px;color:#796a45;font-size:12px;line-height:1.5}
+  .admin-project-notes ul{margin:0;padding-left:21px;display:grid;gap:7px;font-size:12.5px;line-height:1.65}
+  .admin-project-notes li::marker{color:#a17b22}
+  @media(max-width:600px){.admin-project-notes{padding:13px 12px}.admin-project-notes ul{font-size:12px;padding-left:18px}}
+</style>
+
 </head>
 <body>
 
@@ -909,6 +921,16 @@ html.embedded-dashboard .container#publicView {
 </div>
 
 <div class="container" id="dashboardView" style="display:none;">
+  <section id="adminProjectNotes" class="admin-project-notes" style="display:none" aria-live="polite">
+    <div class="admin-project-notes-title"><span aria-hidden="true">⚠️</span><div><strong>অ্যাডমিনের জন্য অভ্যন্তরীণ নোট</strong><small>শুধু অনুমোদিত অ্যাডমিন লগইনের পরে দেখা যায়; কাস্টমার ভিউতে দেখানো হয় না।</small></div></div>
+    <ul>
+      <li><strong>ফার্ম ম্যাপ:</strong> ক্যানেলের ভেতরের রাস্তার প্রস্থ অস্থায়ীভাবে ৪ ফুট ধরে নকশা আঁকা হয়েছে। এটি চূড়ান্ত মাপ নয়। ৮ ফুট সীমানা রাস্তা, দুই পাশে ৩০ ফুট ক্যানেল এবং দুই পাশে অস্থায়ী ৪ ফুট ভেতরের রাস্তার হিসাব ধরলে কেন্দ্রের অবশিষ্ট অংশ আনুমানিক ৩৬ × ১৫৬ ফুট হয়। শেড ও অন্যান্য জোন এই পরিসরে ঠিকভাবে বসে কি না সরেজমিনে জরিপ করে যাচাই করতে হবে।</li>
+      <li><strong>শেড ও পানি:</strong> হাঁস-মুরগির ঘরের একাংশ পানির দিকে দেখানো হয়েছে। নির্মাণের আগে জরিপ, পানির প্রবাহ, ক্যানেলের ঢাল, বন্যার স্তর, ভিত্তি, বর্জ্য ব্যবস্থাপনা এবং স্থানীয় অনুমোদন যাচাই করুন।</li>
+      <li><strong>মূল্যতালিকা:</strong> কাস্টমার পেজে অভ্যন্তরীণ মূল্য-সংক্রান্ত সতর্কতা দেখানো হয় না। নতুন বা অনিশ্চিত পণ্যের দাম, একক, প্যাক অপশন ও প্রাপ্যতা পণ্য ব্যবস্থাপনায় নিশ্চিত করে তারপর প্রকাশ করুন।</li>
+      <li><strong>নকশার ব্যবহার:</strong> বর্তমান ম্যাপ পরিকল্পনা আলোচনার জন্য; এটি জরিপকৃত বা নির্মাণ-অনুমোদিত নকশা নয়। নির্মাণের আগে মাপ ও স্থানীয় নিয়ম যাচাই করুন।</li>
+    </ul>
+  </section>
+
   <div class="stats">
     <div class="stat-card income">
       <div class="label">🐄 মোট আয়</div>
@@ -2958,6 +2980,8 @@ function applyViewMode(){
   const dashboardView = document.getElementById("dashboardView");
   const investorView = document.getElementById("investorView");
   const investorBtn = document.getElementById("investorBtn");
+  const adminProjectNotes = document.getElementById("adminProjectNotes");
+  if (adminProjectNotes) adminProjectNotes.style.display = isAdmin ? "block" : "none";
   const isEmbeddedDashboard = new URLSearchParams(location.search).get("embed") === "1";
 
   if (isAdmin || isStaff) {
