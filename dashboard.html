@@ -797,6 +797,20 @@
 .pdf-viewer-box h2{padding-right:42px}
 @media(max-width:600px){.pdf-viewer-box{width:100%!important;max-height:96vh!important;padding:18px 12px!important}.pdf-viewer-box iframe{min-height:55vh!important;height:60vh!important}}
 </style>
+<style>
+/* In the homepage iframe these navigation cards are duplicates of the hero actions.
+   Keep the trigger buttons in the DOM so index.html can open their existing modals,
+   but collapse the whole repeated block and its spacing. Standalone dashboard remains unchanged. */
+html.embedded-dashboard #publicView {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+}
+</style>
 <script>if(new URLSearchParams(location.search).get('embed')==='1')document.documentElement.classList.add('embedded-dashboard');</script>
 
 </head>
@@ -2928,19 +2942,20 @@ function applyViewMode(){
   const dashboardView = document.getElementById("dashboardView");
   const investorView = document.getElementById("investorView");
   const investorBtn = document.getElementById("investorBtn");
+  const isEmbeddedDashboard = new URLSearchParams(location.search).get("embed") === "1";
 
   if (isAdmin || isStaff) {
-    publicView.style.display = "none";
+    if (publicView) publicView.style.display = "none";
     dashboardView.style.display = "block";
     investorView.style.display = "none";
   } else if (investorSession) {
-    publicView.style.display = "none";
+    if (publicView) publicView.style.display = "none";
     dashboardView.style.display = "none";
     investorView.style.display = "block";
     renderInvestorOwnView();
   } else {
-    // Public visitors see the existing Project/Invest/Video navigation only.
-    publicView.style.display = "block";
+    // Homepage navigation already exists in index.html; only standalone dashboard shows this strip.
+    if (publicView) publicView.style.display = isEmbeddedDashboard ? "none" : "block";
     dashboardView.style.display = "none";
     investorView.style.display = "none";
   }
@@ -3618,8 +3633,22 @@ document.getElementById("resetStaffBtn").addEventListener("click", () => {
 /* ---------- Investor: public form, admin panel, investor login ---------- */
 function money2(n){ return "৳" + Math.round(n||0).toLocaleString("bn-BD"); }
 
-function openModal(id){ document.getElementById(id).style.display = "flex"; }
-function closeModal(id){ document.getElementById(id).style.display = "none"; }
+function notifyParentPublicModalState(isOpen) {
+  if (window.parent === window || new URLSearchParams(location.search).get("embed") !== "1") return;
+  window.parent.postMessage({ type: "munshi-public-modal-state", open: !!isOpen }, location.origin);
+}
+function openModal(id){
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  modal.style.display = "flex";
+  notifyParentPublicModalState(true);
+}
+function closeModal(id){
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  modal.style.display = "none";
+  notifyParentPublicModalState(false);
+}
 
 /* ---------- Styled login dialog (replaces browser prompt()) ---------- */
 let loginCfg = null;

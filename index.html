@@ -874,7 +874,7 @@
     </div>
   </section>
 
-<section id="dashboardWorkspace" aria-label="পাবলিক ও ব্যবস্থাপনা ড্যাশবোর্ড">
+<section id="dashboardWorkspace" aria-label="পাবলিক ও ব্যবস্থাপনা ড্যাশবোর্ড" hidden>
   <div class="workspace-wrap" id="public-dashboard">
     <div class="workspace-head">
       <div>
@@ -1294,13 +1294,24 @@
   let firstRoleMessageSeen = false;
   let dashboardMode = false;
   let frameReady = false;
+  let publicModalOpen = false;
+  let publicCollapseTimer = null;
+  let publicActionOriginY = null;
   const roleNames = {admin:'Admin', staff:'Staff', investor:'Investor'};
   const innerButtonIds = {admin:'adminBtn', staff:'staffBtn', investor:'investorBtn'};
 
   function setDashboardMode(on) {
     dashboardMode = !!on;
     document.body.classList.toggle('dashboard-mode', dashboardMode);
-    workspace.hidden = false; // পাবলিক ড্যাশবোর্ড লগইন ছাড়াও index-এ দৃশ্যমান থাকবে
+    const keepWorkspaceVisible = dashboardMode || !!activeRole || publicModalOpen;
+    workspace.hidden = !keepWorkspaceVisible;
+    if (keepWorkspaceVisible) {
+      frame.style.height = '760px';
+      frame.style.minHeight = '540px';
+    } else {
+      frame.style.height = '0px';
+      frame.style.minHeight = '0px';
+    }
     toggle.hidden = true;     // একই ভূমিকা-বাটন থেকে লগআউট করা যাবে
     const title = document.getElementById('workspaceTitle');
     if (title) title.textContent = activeRole ? `${roleNames[activeRole]} ড্যাশবোর্ড` : 'মুন্সী এগ্রো — পাবলিক ড্যাশবোর্ড';
@@ -1374,16 +1385,35 @@
 
   function clickDashboardAction(actionId) {
     pendingRole = null;
-    if (activeRole) setDashboardMode(true);
-    // Public action buttons open existing modals inside dashboard.html; bring that iframe into view first.
+    if (activeRole) {
+      setDashboardMode(true);
+    } else if (!dashboardMode) {
+      // Show the iframe only temporarily so the existing PDF/video/invest modals can open.
+      if (publicActionOriginY === null) publicActionOriginY = window.scrollY;
+      workspace.hidden = false;
+      frame.style.minHeight = '0px';
+      frame.style.height = Math.max(520, Math.min(900, Math.round(window.innerHeight * 0.82))) + 'px';
+    }
     workspace.scrollIntoView({top:0, behavior:'smooth', block:'start'});
     if (!frameReady) { pendingAction = actionId; return; }
     try {
       const target = frame.contentDocument && frame.contentDocument.getElementById(actionId);
       if (target) { target.click(); pendingAction = null; }
-      else status.textContent = 'এই অপশনটি ড্যাশবোর্ডে পাওয়া যায়নি।';
+      else {
+        status.textContent = 'এই অপশনটি ড্যাশবোর্ডে পাওয়া যায়নি।';
+        if (!activeRole && !dashboardMode) {
+          workspace.hidden = true;
+          frame.style.height = '0px';
+          frame.style.minHeight = '0px';
+        }
+      }
     } catch (error) {
       status.textContent = 'অপশনটি খোলা যায়নি। dashboard.html ফাইলটি একই রিপোজিটরিতে আছে কি না যাচাই করুন।';
+      if (!activeRole && !dashboardMode) {
+        workspace.hidden = true;
+        frame.style.height = '0px';
+        frame.style.minHeight = '0px';
+      }
     }
   }
 
@@ -1399,7 +1429,40 @@
     if (!data || typeof data !== 'object') return;
     if (data.type === 'munshi-dashboard-height') {
       const height = Number(data.height);
-      if (Number.isFinite(height) && height >= 500 && height <= 12000) frame.style.height = Math.ceil(height + 8) + 'px';
+      // Only use content-driven sizing for actual dashboard sessions; the public iframe collapses.
+      if ((activeRole || dashboardMode) && Number.isFinite(height) && height >= 500 && height <= 12000) {
+        frame.style.height = Math.ceil(height + 8) + 'px';
+        frame.style.minHeight = '540px';
+      }
+      return;
+    }
+    if (data.type === 'munshi-public-modal-state') {
+      if (data.open) {
+        publicModalOpen = true;
+        if (publicCollapseTimer) { clearTimeout(publicCollapseTimer); publicCollapseTimer = null; }
+        workspace.hidden = false;
+        if (activeRole || dashboardMode) {
+          frame.style.minHeight = '540px';
+          if (!frame.style.height || parseInt(frame.style.height, 10) < 500) frame.style.height = '760px';
+        } else {
+          frame.style.minHeight = '0px';
+          frame.style.height = Math.max(520, Math.min(900, Math.round(window.innerHeight * 0.82))) + 'px';
+          workspace.scrollIntoView({top:0, behavior:'smooth', block:'start'});
+        }
+      } else {
+        publicModalOpen = false;
+        if (publicCollapseTimer) clearTimeout(publicCollapseTimer);
+        publicCollapseTimer = setTimeout(() => {
+          if (publicModalOpen || activeRole || dashboardMode) return;
+          workspace.hidden = true;
+          frame.style.height = '0px';
+          frame.style.minHeight = '0px';
+          if (publicActionOriginY !== null) {
+            window.scrollTo({top: publicActionOriginY, behavior:'smooth'});
+            publicActionOriginY = null;
+          }
+        }, 180);
+      }
       return;
     }
     if (data.type !== 'munshi-role-state') return;
