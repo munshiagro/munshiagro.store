@@ -798,17 +798,33 @@
 @media(max-width:600px){.pdf-viewer-box{width:100%!important;max-height:96vh!important;padding:18px 12px!important}.pdf-viewer-box iframe{min-height:55vh!important;height:60vh!important}}
 </style>
 <style>
-/* In the homepage iframe these navigation cards are duplicates of the hero actions.
-   Keep the trigger buttons in the DOM so index.html can open their existing modals,
-   but collapse the whole repeated block and its spacing. Standalone dashboard remains unchanged. */
-html.embedded-dashboard #publicView {
+/* Homepage iframe: hide duplicated public quick-action cards and collapse every
+   margin/padding/height associated with their wrapper. The actual buttons remain
+   in the DOM because index.html triggers their existing click handlers.
+   Standalone dashboard (without ?embed=1) remains unchanged. */
+html.embedded-dashboard #publicView,
+html.embedded-dashboard #publicDashboardView {
   display: none !important;
   height: 0 !important;
   min-height: 0 !important;
+  max-height: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
   border: 0 !important;
   overflow: hidden !important;
+}
+html.embedded-dashboard,
+html.embedded-dashboard body,
+html.embedded-dashboard .page-shell {
+  min-height: 0 !important;
+  height: auto !important;
+}
+html.embedded-dashboard .page-shell {
+  margin: 0 auto !important;
+  padding: 0 !important;
+}
+html.embedded-dashboard .container#publicView {
+  display: none !important;
 }
 </style>
 <script>if(new URLSearchParams(location.search).get('embed')==='1')document.documentElement.classList.add('embedded-dashboard');</script>
